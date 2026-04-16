@@ -1,17 +1,13 @@
 name: CD - Build and Push Docker Images
 
+# Triggered only when a PR is merged into main (push event after merge)
 on:
-  workflow_run:
-    workflows: ["CI - Test Backend"]
+  push:
     branches:
       - main
-    types:
-      - completed
 
 jobs:
   build-and-push-docker-image:
-    # Only run if the CI workflow succeeded
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -20,23 +16,30 @@ jobs:
       - name: Login to DockerHub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
+      # Versioning: tag images with both "latest" and the short commit SHA
       - name: Build image and push backend
         uses: docker/build-push-action@v6
         with:
           context: ./backend
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:${{ github.sha }}
           push: true
 
       - name: Build image and push database
         uses: docker/build-push-action@v6
         with:
           context: ./database
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:${{ github.sha }}
           push: true
 
       - name: Build image and push httpd
         uses: docker/build-push-action@v6
         with:
           context: ./httpd
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:${{ github.sha }}
           push: true
