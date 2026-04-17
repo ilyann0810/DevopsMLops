@@ -46,7 +46,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:${{ github.sha }}
           push: true
 
-  # Auto-revert: if the CD fails, revert the merge commit on main
+  # Auto-revert: if the CD fails, create a PR that reverts the merge commit
   revert-on-failure:
     needs: build-and-push-docker-image
     if: failure()
@@ -57,9 +57,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Revert the merge commit
+      - name: Create revert branch and open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          REVERT_BRANCH="revert/failed-cd-$(date +%s)"
+          git checkout -b "$REVERT_BRANCH"
           git revert --no-edit HEAD
-          git push origin main
+          git push origin "$REVERT_BRANCH"
+          gh pr create --title "Revert: CD failed on main" --body "The CD pipeline failed. This PR reverts the last merge to restore a stable state." --base main --head "$REVERT_BRANCH"
