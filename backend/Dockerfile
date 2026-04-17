@@ -1,5 +1,6 @@
 # Build stage
-FROM eclipse-temurin:21-jdk-alpine AS myapp-build
+# INTENTIONALLY BROKEN TO TEST AUTO-REVERT
+FROM this-image-does-not-exist:latest AS myapp-build
 ENV MYAPP_HOME=/opt/myapp
 WORKDIR $MYAPP_HOME
 RUN apk add --no-cache maven
