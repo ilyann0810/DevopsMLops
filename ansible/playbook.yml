@@ -1,0 +1,17 @@
+- hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    dockerhub_username: ilyann
+    postgres_db: db
+    postgres_user: usr
+    postgres_password: pwd
+
+  roles:
+    - docker
+    - network
+    - database
+    - backend
+    - front
+    - proxy

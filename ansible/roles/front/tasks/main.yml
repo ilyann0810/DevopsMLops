@@ -1,0 +1,11 @@
+- name: Run front container
+  community.docker.docker_container:
+    name: my-front
+    image: "{{ dockerhub_username }}/tp-devops-front:latest"
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: frontend-backend
+    pull: true
+  vars:
+    ansible_python_interpreter: /opt/docker_venv/bin/python3

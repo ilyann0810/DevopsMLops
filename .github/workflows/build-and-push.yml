@@ -46,9 +46,43 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-httpd:${{ github.sha }}
           push: true
 
+      - name: Build image and push front
+        uses: docker/build-push-action@v6
+        with:
+          context: ./front
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-front:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-front:${{ github.sha }}
+          push: true
+
+  deploy:
+    needs: build-and-push-docker-image
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+          ansible-galaxy collection install community.docker
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ilyann.mouisset--ferrara.takima.school >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy with Ansible
+        run: |
+          cd ansible
+          ansible-playbook -i inventories/setup.yml playbook.yml
+
   # Auto-revert: if the CD fails, create a PR that reverts the merge commit
   revert-on-failure:
-    needs: build-and-push-docker-image
+    needs: deploy
     if: failure()
     runs-on: ubuntu-24.04
     steps:
