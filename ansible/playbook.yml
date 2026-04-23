@@ -3,10 +3,10 @@
   become: true
 
   vars:
-    dockerhub_username: ilyann
-    postgres_db: db
-    postgres_user: usr
-    postgres_password: pwd
+    dockerhub_username: "{{ vault_dockerhub_username }}"
+    postgres_db: "{{ vault_postgres_db }}"
+    postgres_user: "{{ vault_postgres_user }}"
+    postgres_password: "{{ vault_postgres_password }}"
 
   roles:
     - docker

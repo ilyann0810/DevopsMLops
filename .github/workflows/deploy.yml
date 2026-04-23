@@ -37,10 +37,15 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ilyann.mouisset--ferrara.takima.school >> ~/.ssh/known_hosts 2>/dev/null || true
 
+      - name: Setup Ansible Vault password
+        run: |
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > ~/.vault_pass
+          chmod 600 ~/.vault_pass
+
       - name: Deploy with Ansible
         run: |
           cd ansible
-          ansible-playbook -i inventories/setup.yml playbook.yml
+          ansible-playbook -i inventories/setup.yml playbook.yml --vault-password-file ~/.vault_pass
 
   # Auto-revert: if the deploy fails, create a PR that reverts the merge commit
   revert-on-failure:

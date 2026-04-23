@@ -1,0 +1,4 @@
+vault_postgres_db: db
+vault_postgres_user: usr
+vault_postgres_password: pwd
+vault_dockerhub_username: ilyann
