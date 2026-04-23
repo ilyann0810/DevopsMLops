@@ -1,0 +1,13 @@
+- name: Run httpd container
+  community.docker.docker_container:
+    name: my-httpd
+    image: "{{ dockerhub_username }}/tp-devops-httpd:latest"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - name: frontend-backend
+    pull: true
+  vars:
+    ansible_python_interpreter: /opt/docker_venv/bin/python3

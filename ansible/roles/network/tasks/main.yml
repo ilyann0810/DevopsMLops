@@ -1,0 +1,13 @@
+- name: Create backend-db network
+  community.docker.docker_network:
+    name: backend-db
+    state: present
+  vars:
+    ansible_python_interpreter: /opt/docker_venv/bin/python3
+
+- name: Create frontend-backend network
+  community.docker.docker_network:
+    name: frontend-backend
+    state: present
+  vars:
+    ansible_python_interpreter: /opt/docker_venv/bin/python3

@@ -37,6 +37,16 @@ services:
       timeout: 5s
       retries: 10
 
+  front:
+    build: ./front
+    container_name: my-front
+    restart: unless-stopped
+    networks:
+      - frontend-backend
+    depends_on:
+      backend:
+        condition: service_healthy
+
   httpd:
     build: ./httpd
     container_name: my-httpd
@@ -46,8 +56,8 @@ services:
     networks:
       - frontend-backend
     depends_on:
-      backend:
-        condition: service_healthy
+      - front
+      - backend
 
 networks:
   backend-db:
