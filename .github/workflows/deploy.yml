@@ -1,0 +1,66 @@
+name: CD - Deploy to Server
+
+# Triggered automatically after "CD - Build and Push Docker Images" completes successfully on main
+on:
+  workflow_run:
+    workflows: ["CD - Build and Push Docker Images"]
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy:
+    # Only deploy if the previous workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+          ansible-galaxy collection install community.docker
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ilyann.mouisset--ferrara.takima.school >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy with Ansible
+        run: |
+          cd ansible
+          ansible-playbook -i inventories/setup.yml playbook.yml
+
+  # Auto-revert: if the deploy fails, create a PR that reverts the merge commit
+  revert-on-failure:
+    needs: deploy
+    if: failure()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create revert branch and open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          REVERT_BRANCH="revert/failed-cd-$(date +%s)"
+          git checkout -b "$REVERT_BRANCH"
+          git revert --no-edit -m 1 HEAD
+          git push origin "$REVERT_BRANCH"
+          gh pr create --title "Revert: CD failed on main" --body "The CD pipeline failed. This PR reverts the last merge to restore a stable state." --base main --head "$REVERT_BRANCH"
